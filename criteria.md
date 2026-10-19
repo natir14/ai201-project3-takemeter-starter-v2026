@@ -51,63 +51,79 @@ whether you hit them:
 
 ---
 
-## 1.
+All five targets are measured on the held-out test split and must hold on
+**every one of the three seeds (42, 7 and 2024)**. A miss on any one seed is a
+miss.
 
-<!-- Your criterion. It must name a number. -->
-
-
-
-**Why this target:**
-
-
-
----
-
-## 2.
-
-<!-- Your criterion. -->
-
-
-
-**Why this target:**
-
-
+My dataset: 209 r/nba comments: 144 `reaction` (68.9%), 44 `hot_take`
+(21.1%), 21 `analysis` (10.0%). The split is stratified 70/15/15, so each test
+split holds about 32 comments: roughly 22 `reaction`, 7 `hot_take` and 3
+`analysis`.
 
 ---
 
-## 3.
-
-<!-- Your criterion. -->
-
-
+## 1. Overall accuracy is at least 0.75 on the held-out set, on all three seeds.
 
 **Why this target:**
 
-
+69% of my comments are `reaction`, so a model that answers `reaction` every
+time already scores about 0.69. 0.75 asks the model to beat that do-nothing
+strategy by about two more correct comments out of 32 on every seed. Anything
+lower would let a model that never learned `hot_take` or `analysis` pass.
 
 ---
 
-## 4.
-
-<!-- Your criterion. -->
-
-
+## 2. Macro F1 is at least 0.60 on the held-out set, on all three seeds.
 
 **Why this target:**
 
-
+Accuracy can be inflated by my big `reaction` class; macro F1 weighs all three
+labels equally. The always-`reaction` model gets a macro F1 of about 0.27
+(0.82 on `reaction`, 0 on the other two). 0.60 means the model has to be
+genuinely useful on at least one of my small labels, not just the big one.
 
 ---
 
-## 5.
+## 3. Confidence-based prediction accuracy
 
-<!-- Your criterion. -->
-
-
+The model must achieve at least **80% accuracy on the most-confident third of
+predictions** on the held-out test set for each of the three seeds (42, 7, and
+2024).
 
 **Why this target:**
 
+My dataset contains 209 NBA Reddit comments, with 144 reactions, 44 hot takes,
+and 21 analysis posts. Some comments are difficult to classify because the
+boundaries overlap. I expect the model to be more reliable when it is
+confident. I chose 80% because confident predictions should be more accurate
+than simply predicting the majority label, which represents 68.9% of my
+dataset.
 
+---
+
+## 4. `hot_take` F1 is at least 0.50 on the held-out set, on all three seeds.
+
+**Why this target:**
+
+`hot_take` has 44 examples, only about 7 per test split, so one or two
+mistakes move its F1 a lot. It is also on both of my hard boundaries: against
+`analysis` (a claim with thin support) and against `reaction` (a joking
+prediction like "Just give him the MVP now"). 0.50 is lower than my overall
+performance targets because `hot_take` has fewer examples and overlaps with
+both `reaction` and `analysis`. It is still well above the 0 that a majority
+guesser gets.
+
+---
+
+## 5. `analysis` F1 is at least 0.40 on the held-out set, on all three seeds.
+
+**Why this target:**
+
+`analysis` is my smallest label: 21 examples, about 3 in each test split. On 3
+examples, F1 is very jumpy. Getting just 1 of 3 right with 1 false alarm
+already gives 0.40, and missing all 3 gives 0. I set it the loosest of my five
+because of that, but above 0 so the model has to find at least some real
+reasoning posts on every seed.
 
 ---
 
