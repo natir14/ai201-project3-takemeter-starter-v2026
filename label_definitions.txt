@@ -1,10 +1,34 @@
-# Your label definitions, one per line, as `label: definition`.
+# TakeMeter label definitions — r/nba comments
 #
-# Copy these from your README so the baseline is judged on exactly the
-# definitions you wrote. baseline.py reads this file.
-#
-# Delete the examples below and put yours in.
+# One label per line as `label: definition`. baseline.py reads every line that
+# does not start with `#` and contains a colon, so everything else in this file
+# is a comment.
 
-analysis: makes an argument backed by a specific, checkable fact
-hot_take: a confident claim with no support offered
-reaction: an immediate response to something that just happened
+analysis: basketball reasoning supported by meaningful evidence or explanation, such as a stat, a specific play or matchup, a tactical or rules mechanism, or a concrete comparison that explains why the claim holds.
+hot_take: a strong basketball claim or prediction (best ever, GOAT, overrated, will win MVP) offered with insufficient reasoning, where any support is vague, generic, or just restates the claim.
+reaction: an emotional response, joke, sarcasm, excitement, or surprise about what just happened, which makes no real basketball argument.
+
+# ── Decision rule (apply in order; stop at the first that fits) ──────────────
+#
+# 1. Meaningful reasoning wins. If the comment explains *why* with something a
+#    reader could check or follow (a number, a named play or mechanism, a
+#    specific comparison doing real work), it is analysis, even if the tone is
+#    heated, joking, or the claim is bold.
+# 2. Otherwise, a strong unsupported claim is hot_take. A big verdict or
+#    prediction with no real support, or support that is only adjectives
+#    ("he's just better", "you all know it's true"), is hot_take, even if it is
+#    phrased excitedly.
+# 3. Otherwise, it is reaction: feelings, humor, sarcasm, hype, disbelief.
+#
+# "Meaningful" test: delete the reason and ask whether the comment lost an
+# argument or only lost decoration. If it lost an argument, it's analysis.
+#
+# ── Exclusion rule: context-dependent comments ───────────────────────────────
+#
+# Leave out of labels.csv any reply whose meaning depends on the parent comment
+# or the clip ("Was also my thought.", "Don't disagree", "Is he better than X?"
+# when X only makes sense in the thread), unless enough context is kept in the
+# row itself, e.g. the reply is self-explanatory or the parent is quoted in the
+# text. Reason: the model and the staff labeler see only the text column, so a
+# label that relies on missing context can't be learned or agreed on.
+# Record each exclusion decision in your notes, not as a fourth label.
