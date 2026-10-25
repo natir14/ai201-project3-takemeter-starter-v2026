@@ -339,18 +339,45 @@ myself with no tools. Here is how the 189 rows were labelled:
 
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | 0.219 | 0.688 | +0.469 |
+| Macro F1 | 0.222 | 0.272 | +0.049 |
+| F1 — `analysis` | 0.333 | 0.000 | -0.333 |
+| F1 — `hot_take` | 0.333 | 0.000 | -0.333 |
+| F1 — `reaction` | 0.000 | 0.815 | +0.815 |
+
+Baseline: zero-shot `facebook/bart-large-mnli` using my label definitions,
+scored on the same 32 held-out comments as the trained model (seed 42).
+Full results are in `baseline_results.json`.
 
 **What I predicted before I looked:**
-<!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
-     prediction made afterwards isn't one. -->
+I predicted that the baseline might achieve a higher macro F1 than the trained
+model, because it could recognize the minority labels (`analysis`, `hot_take`)
+that the trained model missed.
+
+This was not a blind prediction. The trained model's scores (accuracy 0.688,
+macro F1 0.272, F1 of 0.000 on `analysis` and `hot_take`) were already recorded
+in Unit 5 when I wrote it, so I already knew the trained model had no minority
+label predictions to defend.
+
+The prediction was not supported. Baseline macro F1 was 0.222, compared with
+0.272 for the trained model.
 
 **What the gap actually means:**
-<!-- If the baseline matched your trained model, your fine-tuning added
-     nothing — and that is a real finding, not a failure. Say it plainly. -->
+The trained model has higher overall accuracy (+0.469), but it predicted
+`reaction` for all 32 held-out comments. Its 0.688 accuracy is the share of
+`reaction` in the test set (22 of 32), so it learned the majority class and
+nothing else. It cannot tell an `analysis` or `hot_take` comment apart from a
+`reaction`.
+
+The baseline does the opposite. It found every `analysis` comment and 4 of 7
+`hot_take` comments, but it never predicted `reaction` correctly (F1 0.000 on
+22 comments). It labeled all 22 of those quick reactions as `hot_take` (13)
+or `analysis` (9).
+
+The trained model's macro F1 lead (+0.049) is small, and it comes entirely from
+`reaction`, the one label it predicts. Neither model separates the three labels
+in a useful way. Fine-tuning taught the model the label distribution, not the
+difference between the labels.
 
 
 
