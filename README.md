@@ -390,27 +390,68 @@ difference between the labels.
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.75 | 0.688 | 0.688 | 0.688 | MISSED |
+| 2. Macro F1 | ≥ 0.60 | 0.272 | 0.272 | 0.272 | MISSED |
+| 3. Accuracy on most-confident third | ≥ 0.80 | 1.000 | 1.000 | 0.900 | MET |
+| 4. F1 — `hot_take` | ≥ 0.50 | 0.000 | 0.000 | 0.000 | MISSED |
+| 5. F1 — `analysis` | ≥ 0.40 | 0.000 | 0.000 | 0.000 | MISSED |
+
+Numbers are from `results_three_seeds_before.json`. Each seed was tested on 32
+held-out comments: 22 `reaction`, 7 `hot_take` and 3 `analysis`. Training ran
+on **CPU** (torch 2.14.1+cpu), with the unchanged Unit 5 settings: 3 epochs,
+learning rate 2e-5, batch size 16, max length 128. For reference, accuracy on
+the least-confident third was 0.200 / 0.400 / 0.600. Each third is 10
+comments.
+
+**All three seeds predicted `reaction` for all 32 test comments.** The scores
+are identical across seeds because each stratified split has the same 22 / 7 /
+3 label counts. A model that always answers `reaction` gets exactly 22 of 32
+right (0.688) and an F1 of 0 on both minority labels.
+
+**Zero spread does not show the model generalizes reliably.** A spread of
+0.000 normally means a stable measurement. Here it only means the model gives
+the same answer for every comment, whatever split it trained on. It always
+predicts the majority class, so its scores depend on the label counts and not
+on what it learned. Validation accuracy also stayed at 0.6875 after every
+epoch on every seed, so the model never predicted a minority label during
+training either.
+
+Criterion 3 is met, but only in a narrow sense. Every prediction is
+`reaction`, so the most-confident third is just the 10 comments the model
+rated most likely to be `reaction`, and those mostly are. The model does rank
+comments by how likely they are to be `reaction`, but that ranking never
+changed its answer on any comment.
+
+**Possible explanations, not yet proven causes:**
+- **Class imbalance.** `reaction` is 69% of the data (144 of 209), so always
+  guessing it is a strong strategy for the training loss.
+- **Insufficient training.** Each run was only about 30 optimizer steps on 145
+  training comments. Training loss was still falling at the end of epoch 3
+  (about 0.71 to 0.80).
+
+Neither of these has been tested yet.
 
 ### Confusion matrix
 
 <!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
      An image of a matrix earns nothing. -->
 
-| true \ predicted |  |  |  |
+Seed 42. Seeds 7 and 2024 produced the identical matrix.
+
+| true \ predicted | analysis | hot_take | reaction |
 |---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+| **analysis** | 0 | 0 | 3 |
+| **hot_take** | 0 | 0 | 7 |
+| **reaction** | 0 | 0 | 22 |
 
 **My biggest off-diagonal number, and what it means:**
-<!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
-     direction. "7 real analysis posts were called hot_take and only 3 went the
-     other way" is a direction, not just an error rate. -->
+7 real `hot_take` comments were predicted as `reaction`, and 0 went the other
+way. This is not a confusion between two similar labels. The model never
+predicts anything except `reaction`, so every `hot_take` and every `analysis`
+comment ends up in the `reaction` column. `hot_take` → `reaction` is the
+largest cell only because `hot_take` is the bigger minority label (7 test
+comments against 3 for `analysis`). The model learned the label distribution,
+not the boundary between `hot_take` and `reaction`.
 
 
 
