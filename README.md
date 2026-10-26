@@ -410,11 +410,11 @@ right (0.688) and an F1 of 0 on both minority labels.
 
 **Zero spread does not show the model generalizes reliably.** A spread of
 0.000 normally means a stable measurement. Here it only means the model gives
-the same answer for every comment, whatever split it trained on. It always
-predicts the majority class, so its scores depend on the label counts and not
-on what it learned. Validation accuracy also stayed at 0.6875 after every
-epoch on every seed, so the model never predicted a minority label during
-training either.
+the same answer for every test comment, whatever split it trained on. It
+always predicts the majority class on the test set, so its scores depend on
+the label counts and not on what it learned. Validation accuracy also stayed
+at 0.6875 (the always-`reaction` score) after every epoch on every seed, which
+is consistent with the same collapse on the validation set.
 
 Criterion 3 is met, but only in a narrow sense. Every prediction is
 `reaction`, so the most-confident third is just the 10 comments the model
@@ -464,11 +464,11 @@ not the boundary between `hot_take` and `reaction`.
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Overall accuracy | ≥ 0.75 on all three seeds | MISSED | 0.688 on seeds 42, 7 and 2024. Exactly the always-`reaction` score (22 / 32), below target on every seed. |
+| 2 | Macro F1 | ≥ 0.60 on all three seeds | MISSED | 0.272 on every seed: 0.815 on `reaction`, 0 on the other two. Same as the always-`reaction` model I described in `criteria.md`. |
+| 3 | Accuracy on most-confident third | ≥ 0.80 on all three seeds | MET | 1.000 / 1.000 / 0.900 on the 10 most-confident comments per seed. All three clear 0.80. Met only in a narrow sense: every test prediction is `reaction`, so this measures how well the model ranks comments by how likely they are to be `reaction`, not whether it can pick a label. |
+| 4 | F1 — `hot_take` | ≥ 0.50 on all three seeds | MISSED | 0.000 on every seed. The model predicted `reaction` for all 7 `hot_take` test comments and never predicted `hot_take` for any test comment. |
+| 5 | F1 — `analysis` | ≥ 0.40 on all three seeds | MISSED | 0.000 on every seed. The model predicted `reaction` for all 3 `analysis` test comments and never predicted `analysis` for any test comment. |
 
 **Diagnoses**
 
@@ -480,6 +480,61 @@ not the boundary between `hot_take` and `reaction`.
      ⚠️ Use your agreement report as evidence. It is the only instrument you
      have that can tell a LABELLING problem from a MODEL problem, and this
      section is graded on whether you used it that way. -->
+
+All four misses have one cause: on every seed the model predicted `reaction`
+for all 32 test comments. Criteria 1, 2, 4 and 5 are four views of that one
+fact, so I diagnose it once and then say what it means for each.
+
+**What the evidence shows.** The test predictions are all `reaction` on all
+three seeds; the confusion matrices show it directly. I only evaluated the
+test and validation sets, so I can only make claims about those two, not about
+the training set. On validation, accuracy (0.6875) and macro F1 (0.272) after
+every epoch on every seed equalled exactly what an always-`reaction` model
+scores on that split. That is consistent with the model predicting only
+`reaction` there too, though I didn't save the per-comment validation
+predictions to confirm it. Training loss was still falling at the end (about
+0.71–0.80 after epoch 3). That points to a model that never left the "always
+guess the majority" starting point, not one that learned a boundary and got
+it wrong.
+
+**Checking the four common causes against the evidence:**
+
+- **Too few examples for a label: likely contributes.** Each training split
+  has about 100 `reaction`, 30 `hot_take` and only 15 `analysis` comments.
+  With 69% `reaction`, guessing it every time is a strong way to lower the
+  training loss. Each run was also only about 30 optimizer steps (145 comments,
+  batch 16, 3 epochs), which may not be enough for the minority labels to
+  overcome that. Class imbalance and too little training are my two leading
+  explanations, but **neither is proven yet**. Testing them is what the
+  improvement experiment is for.
+- **A boundary I applied inconsistently: possible, not shown.** My one
+  independent disagreement with staff was on the `analysis` / `hot_take`
+  boundary (pile a: I reacted to tone and didn't check whether the fact was
+  load-bearing). That is the same boundary my own taxonomy relies on, so I may
+  have labelled it loosely in my 209 NBA comments too. But the evidence is
+  thin: one miss out of 5 independent labels, on running posts under someone
+  else's taxonomy. The other 25 labels were ChatGPT-suggested, so they tell me
+  nothing about my own consistency.
+- **A genuinely hard label pair: can't be seen yet.** The confusion matrix has
+  no confusion *between* labels. Every off-diagonal cell is in the `reaction`
+  column (7 `hot_take` → `reaction`, 3 `analysis` → `reaction`, 0 the other
+  way). Those cells come from the model never predicting the other labels on
+  the test set, not from it mixing up a particular pair.
+- **A task the model can't reach from this much data: possible.** 209
+  comments, with 21 `analysis`, may just be too little. The zero-shot
+  baseline, using only my definitions, found all 3 `analysis` and 4 of 7
+  `hot_take` test comments, though it got every `reaction` wrong. So the
+  minority labels are not impossible to detect from the text alone.
+
+**Using the agreement report to separate a labelling problem from a model
+problem.** The agreement report is the only evidence I have about my
+labelling, and here it can't settle the question. A labelling problem would
+show up as the model confusing the same pair I confused with staff. My model
+never predicts `analysis` or `hot_take` on the test set, so it has no pairs to
+compare. The current failure is a **model / training problem** (collapse to
+the majority class). Any labelling problem on the `analysis` / `hot_take`
+boundary is hidden underneath it, and would only show up once the model starts
+predicting minority labels.
 
 
 
@@ -553,6 +608,13 @@ which is too few to say much.
 > to the tone instead of checking whether the fact was load-bearing.
 
 **What the pattern in my disagreements tells me:**
+There is only one disagreement, so there is no pattern to read, and the 96.7%
+overstates my own consistency because 25 of the 30 labels were
+ChatGPT-suggested. The one miss that was my own is on rule 1 (`analysis`
+vs. `hot_take`). I labelled a combative-sounding post by its tone instead of
+checking whether its fact carried the argument. That boundary also separates
+`analysis` from `hot_take` in my NBA taxonomy, so it's the boundary I would
+re-check first in my own 209 labels.
 
 
 
