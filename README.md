@@ -325,6 +325,44 @@ myself with no tools. Here is how the 189 rows were labelled:
   criterion 3.
 - Claude ran the training code and committed the files at my request.
 
+### Unit 6 AI Usage
+
+**Staff agreement labels.** I labelled staff posts 1–5 myself, with no AI
+input. For posts 6–30, ChatGPT suggested labels, which I reviewed and
+accepted. Every label's source is recorded in `my_staff_labels_source.csv`,
+and the Agreement Report gives the rate split by source: 4 / 5 for my own
+labels, 25 / 25 for the ChatGPT-suggested ones. The overall 29 / 30 is not
+independent human agreement.
+
+**What Claude Code did:**
+- Baseline: built the Baseline vs. Trained table from `baseline.py`'s results
+  and checked the baseline's per-label predictions.
+- Three-seed training: ran notebook sections 6–7 for seeds 42, 7 and 2024,
+  before and after the improvement, without rerunning sections 4–5, so
+  `results.json` and `test_split.csv` were never overwritten.
+- Agreement: ran `agreement.py` and recalculated the rate independently to
+  check `agreement_results.json`.
+- Improvement: implemented the class-weighted loss (`CLASS_WEIGHTED` and
+  `WeightedTrainer` in `takemeter.ipynb`).
+- Verification: checksummed the protected files before and after each run,
+  and checked every README figure against the result files.
+- Writing: drafted the Unit 6 README sections.
+
+**What I decided:** I reviewed and approved the improvement experiment before
+any retraining, the ruling on the one staff disagreement (pile a, staff
+correct), the MET/MISSED verdicts and the final interpretations in the
+diagnoses, the improvement write-up and What's Still Broken. I also asked
+for corrections to Claude's drafts:
+- Limit the collapse claims to the test and validation sets that were
+  actually evaluated.
+- Don't treat class imbalance as the only cause.
+- Don't attribute the seed-to-seed spread to dataset size alone.
+
+**Baseline prediction.** As stated under Baseline vs. Trained, my prediction
+that the baseline might beat the trained model on macro F1 was written down
+after I had already seen the trained model's Unit 5 scores. It is not a blind
+prediction.
+
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 5.
