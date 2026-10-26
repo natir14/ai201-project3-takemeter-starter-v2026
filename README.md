@@ -623,23 +623,84 @@ re-check first in my own 209 labels.
 ## The Improvement
 
 **What I changed:**
+One change: class-weighted cross-entropy loss. Each label's weight is
+total / (3 × count), computed from that seed's training split only. With 100
+`reaction`, 30 `hot_take` and 15 `analysis` training comments on every seed,
+the weights were `analysis` 3.222, `hot_take` 1.611 and `reaction` 0.483. It
+is the `CLASS_WEIGHTED = True` setting in section 2 of `takemeter.ipynb` and
+the `WeightedTrainer` in section 4. Everything else is unchanged: data,
+labels, seeds 42 / 7 / 2024 and their splits, 3 epochs, learning rate 2e-5,
+batch size 16, max length 128, CPU. Results are in
+`results_three_seeds_after.json`. The before numbers are still in
+`results_three_seeds_before.json`.
+
+`CLASS_WEIGHTED = True` is now the notebook default, so re-running sections
+4–5 would train a weighted model. Setting it to `False` reproduces the
+original training. `results.json` and `test_split.csv` were not re-run and
+still hold the original Unit 5 seed-42 run.
 
 **Which diagnosis pointed at it:**
+The before model predicted `reaction` for all 32 test comments on every seed.
+My diagnosis named class imbalance (69% `reaction`) and too little training
+as possible causes. Weighting tests the imbalance explanation directly: it
+makes always guessing `reaction` costly. I didn't also change epochs or
+learning rate, so that a result can be attributed to this one change.
 
 ### Run Log — After
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.75 | 0.812 | 0.625 | 0.688 | MISSED |
+| 2. Macro F1 | ≥ 0.60 | 0.729 | 0.590 | 0.457 | MISSED |
+| 3. Accuracy on most-confident third | ≥ 0.80 | 0.900 | 0.800 | 0.800 | MET |
+| 4. F1 — `hot_take` | ≥ 0.50 | 0.615 | 0.476 | 0.000 | MISSED |
+| 5. F1 — `analysis` | ≥ 0.40 | 0.667 | 0.571 | 0.545 | MET |
+
+Confusion matrix, seed 42 (after):
+
+| true \ predicted | analysis | hot_take | reaction |
+|---|---|---|---|
+| **analysis** | 3 | 0 | 0 |
+| **hot_take** | 2 | 4 | 1 |
+| **reaction** | 1 | 2 | 19 |
 
 **Did it help, and how do I know:**
 
 <!-- If it didn't, say so. Relabelling that didn't help is a genuinely
      interesting result and earns full credit. -->
+
+Partly. It broke the collapse, it didn't make the model reliable, and the
+improvement varies widely by seed.
+
+- **The collapse is broken on the test set.** Before, every seed predicted
+  only `reaction`. After, every seed predicts `analysis` (recall 3/3, 2/3,
+  3/3), and macro F1 rose on every seed: 0.272 → 0.729 / 0.590 / 0.457.
+  Criterion 5 went from MISSED to MET. Because changing only the loss
+  weighting broke the collapse, this supports class imbalance as a
+  contributing cause. It doesn't show imbalance was the only cause: too little
+  training (about 30 steps, loss still falling) may also contribute, and this
+  experiment didn't test that.
+- **But only one seed is good.** Seed 42 clears all five targets on its own.
+  Seed 7 got *worse* on accuracy (0.688 → 0.625) and `reaction` F1
+  (0.815 → 0.722), calling 8 of 22 reactions `hot_take`. Seed 2024 never
+  predicted `hot_take` at all (F1 0.000) and over-predicted `analysis`
+  (8 predicted, 3 correct).
+- **Stability got worse.** The before spread was 0.000 only because the model
+  gave the same answer to everything. Now accuracy spreads 0.188 and macro F1
+  0.272 across seeds. Each seed changes three things at once: which comments
+  land in the train/validation/test splits, the random initialization of the
+  classifier head, and the order of training batches. Any of them could drive
+  the spread, and with this design I can't separate them. The small number of
+  minority examples (15 `analysis`, 30 `hot_take` in training; 3 and 7 in
+  test) makes every one of these effects larger.
+- **Criterion 3 still passes, but with less margin** (1.000 / 1.000 / 0.900 →
+  0.900 / 0.800 / 0.800). It now means more, though: the model is ranking
+  across three predicted labels, not only `reaction`.
+- **The confusions are now real.** Summed over seeds: `reaction` →
+  `hot_take` 10, `hot_take` → `reaction` 7, `hot_take` → `analysis` 5,
+  `analysis` → `hot_take` 1. The `analysis` / `hot_take` pair is lopsided in
+  one direction: the model calls my `hot_take` comments `analysis`, almost
+  never the reverse.
 
 
 
@@ -649,12 +710,45 @@ re-check first in my own 209 labels.
 
 <!-- For each criterion still missed: what you'd do, and why you stopped. -->
 
+These are recommendations only. I ran no further experiments after the
+class-weighting run.
 
+**1. Overall accuracy ≥ 0.75: MISSED (0.812 / 0.625 / 0.688).** Only seed 42
+clears it. Weighting trades `reaction` hits for minority hits, and on seed 7
+that trade lost more than it gained. What I'd do: add training steps (more
+epochs) with the weighting kept on, because training loss was still falling
+when every run stopped. I stopped because the milestone allows one change,
+and changing the training budget at the same time would make the result
+impossible to attribute.
+
+**2. Macro F1 ≥ 0.60: MISSED (0.729 / 0.590 / 0.457).** Seed 7 misses by
+0.010, and seed 2024 misses because `hot_take` scored 0. This criterion fails
+because of criterion 4. What I'd do: the same as criterion 4.
+
+**4. `hot_take` F1 ≥ 0.50: MISSED (0.615 / 0.476 / 0.000).** `hot_take` is
+squeezed from both sides: reactions get called `hot_take` (10 across seeds),
+and hot takes get called `reaction` (7) or `analysis` (5). What I'd do first
+is re-check my own `hot_take` labels against my rule 1, whether the fact
+carries the argument. My one independent miss in the staff agreement check
+was calling a fact-carried `analysis` post a `hot_take` because of its tone.
+If I did that in my NBA labels too, some of my `hot_take` comments are really
+`analysis`, which would produce exactly the `hot_take` → `analysis` direction
+the model shows. That's a hypothesis: I didn't save the per-comment
+predictions, so I can't yet name those comments. Then I'd collect more
+`hot_take` and `analysis` examples. I stopped because relabelling or
+collecting data is a second change, and the milestone allows one.
+
+**Criteria 3 and 5 are met but fragile.** Two seeds sit exactly on criterion
+3's 0.80 line, and `analysis` F1 rests on 3 test comments per seed, where one
+comment moves it by about 0.2.
 
 **The gap between what I meant my labels to capture and what the model
 learned:**
 <!-- Two sentences. Your confusion matrix is the evidence. -->
-
+I meant `hot_take` to mean an unsupported general claim, as opposed to an
+immediate `reaction` or a fact-carried `analysis`. The after-matrices show the
+model treating it as a fuzzy middle category, reached from both `reaction`
+(10) and `analysis`-like comments, and on seed 2024 never predicted at all.
 
 
 <!-- ═════════════════════════════════════════════════════════════════════
