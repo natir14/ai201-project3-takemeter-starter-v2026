@@ -493,7 +493,21 @@ not the boundary between `hot_take` and `reaction`.
      data/staff_taxonomy.md, not your own — so every argument below is made
      from those definitions and those decision rules. -->
 
-**Agreement rate:** ___ / 30 = ___%
+**Agreement rate:** 29 / 30 = 96.7%
+
+**How these labels were made — read this before the rate.** I labelled posts
+1–5 independently. For posts 6–30 I accepted labels suggested by ChatGPT. The
+provenance of every label is in `my_staff_labels_source.csv`. So 96.7% is
+**not** a measure of independent human agreement:
+
+| Source | Agreed with staff |
+|---|---|
+| My own labels (posts 1–5) | 4 / 5 (80%) |
+| ChatGPT-suggested, accepted by me (posts 6–30) | 25 / 25 (100%) |
+
+Six of the seven posts staff flagged as hard fall in the ChatGPT-suggested
+set. The only evidence here about how *I* apply a written rule is five posts,
+which is too few to say much.
 
 <!-- Nobody grades this number. A 60% who argues every disagreement from the
      stated rules beats a 95% who wrote "staff was right" nine times. Several
@@ -516,22 +530,27 @@ not the boundary between `hot_take` and `reaction`.
      what you did across your own 200. -->
 
 **1.**
-> *The post:*
+> *The post:* "Everyone blames the hill at 18 miles. I split the field into
+> people who ran the first half under 1:45 and over, and the slowdown after 18
+> was almost identical for both groups. If the hill were the problem the fast
+> starters would fall apart harder."
 >
-> *Staff said / I said:*
+> *Staff said / I said:* `analysis` / `hot_take` (my own label, not
+> AI-suggested)
 >
-> *My call, and why:*
+> *My call, and why:* Staff is right. Rule 1 asks whether the checkable fact
+> carries the argument, and the definition of `analysis` lists a named
+> comparison as such a fact. Here the comparison (sub-1:45 vs. slower first
+> halves, slowdown after mile 18) *is* the argument. Without it, "the hill
+> isn't the problem" has nothing behind it. I think the combative opening
+> ("Everyone blames…") pulled me toward `hot_take`. The closest case for my
+> label is that the result is only "almost identical", with no number, which
+> is the reason staff gave for calling sp_020 a hot take. But sp_020 offers no
+> method at all, and this post names a specific threshold and a comparison
+> anyone could rerun.
 >
-> *Which pile:*
-
-**2.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
+> *Which pile:* (a). The rule covered it and I applied it loosely. I reacted
+> to the tone instead of checking whether the fact was load-bearing.
 
 **What the pattern in my disagreements tells me:**
 
